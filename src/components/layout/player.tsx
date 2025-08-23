@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -46,13 +47,13 @@ export default function MusicPlayer() {
   }, [isPlaying, isReady]);
 
   useEffect(() => {
-    if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
+    if (playerRef.current && isReady && typeof playerRef.current.setVolume === 'function') {
         playerRef.current.setVolume(volume);
     }
-  }, [volume]);
+  }, [volume, isReady]);
   
   const startProgressLoop = () => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    stopProgressLoop(); // Ensure no multiple loops are running
     progressIntervalRef.current = setInterval(() => {
       if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
         const currentTime = playerRef.current.getCurrentTime();
@@ -73,14 +74,19 @@ export default function MusicPlayer() {
 
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
-    if (typeof event.target.setVolume === 'function') {
-      event.target.setVolume(volume);
-    }
     setIsReady(true);
-    if (isPlaying) {
-      event.target.playVideo();
-    }
   };
+
+  useEffect(() => {
+    if(isReady) {
+        if (typeof playerRef.current?.setVolume === 'function') {
+            playerRef.current.setVolume(volume);
+        }
+        if (isPlaying) {
+            playerRef.current?.playVideo();
+        }
+    }
+  }, [isReady, volume, isPlaying]);
 
   const onPlayerStateChange = (event: { data: number, target: YouTubePlayer }) => {
     if (event.data === 1) { // Playing
@@ -93,7 +99,7 @@ export default function MusicPlayer() {
   };
   
   const onSliderChange = (value: number[]) => {
-    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
+    if (playerRef.current && isReady && typeof playerRef.current.seekTo === 'function') {
       const newTime = value[0];
       playerRef.current.seekTo(newTime, true);
       updateProgress(newTime, duration);
@@ -101,6 +107,7 @@ export default function MusicPlayer() {
   };
   
   const formatTime = (seconds: number) => {
+    if (isNaN(seconds) || seconds < 0) return '0:00';
     const minutes = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
@@ -179,6 +186,7 @@ export default function MusicPlayer() {
             opts={{ height: '0', width: '0', playerVars: { autoplay: 1 } }}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
+            onError={(e) => console.error('YT Player Error:', e)}
             className="absolute -z-10"
          />
       )}
