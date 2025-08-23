@@ -85,7 +85,9 @@ export default function MusicPlayer() {
     setIsReady(true);
   };
   
-  const onPlayerStateChange = (event: { data: number }) => {
+  const onPlayerStateChange = (event: {
+    target: any; data: number 
+}) => {
     // We get the player from the event target to ensure it's the correct, active instance
     const player = event.target;
     if (typeof player.getPlayerState !== 'function') return;
@@ -188,7 +190,7 @@ export default function MusicPlayer() {
             opts={{ height: '0', width: '0', playerVars: { autoplay: 1 } }}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
-            onError={(e) => console.error('YT Player Error:', e)}
+            onError={(e: any) => console.error('YT Player Error:', e)}
             className="absolute -z-10"
          />
       )}
