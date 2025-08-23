@@ -46,7 +46,7 @@ export default function MusicPlayer() {
   }, [isPlaying, isReady]);
 
   useEffect(() => {
-    if (playerRef.current && playerRef.current.setVolume) {
+    if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
         playerRef.current.setVolume(volume);
     }
   }, [volume]);
@@ -54,7 +54,7 @@ export default function MusicPlayer() {
   const startProgressLoop = () => {
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     progressIntervalRef.current = setInterval(() => {
-      if (playerRef.current && playerRef.current.getCurrentTime && playerRef.current.getDuration) {
+      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
         const currentTime = playerRef.current.getCurrentTime();
         const totalDuration = playerRef.current.getDuration();
         if (totalDuration > 0) {
@@ -73,7 +73,9 @@ export default function MusicPlayer() {
 
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
-    event.target.setVolume(volume);
+    if (typeof event.target.setVolume === 'function') {
+      event.target.setVolume(volume);
+    }
     setIsReady(true);
     if (isPlaying) {
       event.target.playVideo();
@@ -91,7 +93,7 @@ export default function MusicPlayer() {
   };
   
   const onSliderChange = (value: number[]) => {
-    if (playerRef.current && playerRef.current.seekTo) {
+    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
       const newTime = value[0];
       playerRef.current.seekTo(newTime, true);
       updateProgress(newTime, duration);
