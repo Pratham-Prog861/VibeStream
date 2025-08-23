@@ -12,7 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Music } from 'lucide-react';
+import { Loader2, Music, Play } from 'lucide-react';
+import { usePlayerStore } from '@/store/player-store';
 
 const formSchema = z.object({
   mood: z.string().min(3, { message: 'Mood must be at least 3 characters long.' }),
@@ -23,6 +24,7 @@ export default function PlaylistForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GeneratePlaylistOutput | null>(null);
   const { toast } = useToast();
+  const { playSong } = usePlayerStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -108,9 +110,22 @@ export default function PlaylistForm() {
             <h3 className="font-headline text-2xl font-semibold mb-4">Your AI-Generated Playlist</h3>
             <ul className="space-y-2 rounded-md border p-4">
               {result.playlist.map((song, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <Music className="h-4 w-4 text-accent" />
-                  <span>{song}</span>
+                <li key={index} className="flex items-center justify-between gap-3 group">
+                  <div className="flex items-center gap-3">
+                    <Music className="h-4 w-4 text-accent" />
+                    <div>
+                      <p>{song.title}</p>
+                      <p className="text-sm text-muted-foreground">{song.artist}</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="opacity-0 group-hover:opacity-100"
+                    onClick={() => playSong({ title: song.title, artist: song.artist, videoId: song.youtubeId })}
+                  >
+                    <Play className="h-5 w-5" />
+                  </Button>
                 </li>
               ))}
             </ul>

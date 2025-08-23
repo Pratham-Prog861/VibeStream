@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import YouTube from 'react-youtube';
 import {
   Play,
   Pause,
@@ -13,11 +14,30 @@ import {
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { usePlayerStore } from '@/store/player-store';
 
 export default function MusicPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(50);
+  const { currentSong, isPlaying, volume, play, pause, setVolume } = usePlayerStore();
+
+  const onPlayerReady = (event: any) => {
+    // access to player in all event handlers via event.target
+    event.target.setVolume(volume);
+  };
+
+  const onPlayerStateChange = (event: any) => {
+    // event.data can be:
+    // -1 (unstarted)
+    // 0 (ended)
+    // 1 (playing)
+    // 2 (paused)
+    // 3 (buffering)
+    // 5 (video cued)
+    if (event.data === 1) {
+      play();
+    } else if (event.data === 2) {
+      pause();
+    }
+  };
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/80 backdrop-blur-sm">
@@ -25,7 +45,7 @@ export default function MusicPlayer() {
         {/* Song Info */}
         <div className="flex items-center gap-4 w-1/4">
           <Image
-            src="https://placehold.co/64x64/222629/4DBA99.png"
+            src={currentSong.videoId ? `https://img.youtube.com/vi/${currentSong.videoId}/0.jpg` : "https://placehold.co/64x64/222629/4DBA99.png"}
             alt="Album Art"
             width={64}
             height={64}
@@ -33,8 +53,8 @@ export default function MusicPlayer() {
             data-ai-hint="album cover"
           />
           <div className="hidden lg:block">
-            <h3 className="font-semibold truncate">Cosmic Echoes</h3>
-            <p className="text-sm text-muted-foreground truncate">Galaxy Drifters</p>
+            <h3 className="font-semibold truncate">{currentSong.title}</h3>
+            <p className="text-sm text-muted-foreground truncate">{currentSong.artist}</p>
           </div>
         </div>
 
@@ -51,7 +71,7 @@ export default function MusicPlayer() {
               variant="default"
               size="icon"
               className="h-12 w-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={isPlaying ? pause : play}
             >
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
@@ -74,9 +94,18 @@ export default function MusicPlayer() {
           <Button variant="ghost" size="icon" onClick={() => setVolume(volume > 0 ? 0 : 50)}>
             {volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </Button>
-          <Slider defaultValue={[volume]} max={100} step={1} className="w-24 hidden md:block" onValueChange={(value) => setVolume(value[0])}/>
+          <Slider value={[volume]} max={100} step={1} className="w-24 hidden md:block" onValueChange={(value) => setVolume(value[0])}/>
         </div>
       </div>
+      {currentSong.videoId && (
+         <YouTube
+            videoId={currentSong.videoId}
+            opts={{ height: '0', width: '0' }}
+            onReady={onPlayerReady}
+            onStateChange={onPlayerStateChange}
+            className="absolute -z-10"
+         />
+      )}
     </footer>
   );
 }

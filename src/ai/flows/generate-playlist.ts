@@ -22,8 +22,14 @@ const GeneratePlaylistInputSchema = z.object({
 });
 export type GeneratePlaylistInput = z.infer<typeof GeneratePlaylistInputSchema>;
 
+const SongSchema = z.object({
+  title: z.string().describe('The title of the song.'),
+  artist: z.string().describe('The artist of the song.'),
+  youtubeId: z.string().describe('The YouTube video ID for the song.'),
+});
+
 const GeneratePlaylistOutputSchema = z.object({
-  playlist: z.array(z.string()).describe('A list of song titles for the playlist.'),
+  playlist: z.array(SongSchema).describe('A list of songs for the playlist.'),
 });
 export type GeneratePlaylistOutput = z.infer<typeof GeneratePlaylistOutputSchema>;
 
@@ -39,6 +45,7 @@ const generatePlaylistPrompt = ai.definePrompt({
 
   Based on the user's mood and listening habits, create a playlist of songs.
   Consider the desired length if provided.
+  For each song, provide a realistic title, artist, and a fictional YouTube video ID (e.g., 'dQw4w9WgXcQ').
 
   Mood: {{{mood}}}
   Listening Habits: {{{listeningHabits}}}
