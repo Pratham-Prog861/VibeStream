@@ -37,18 +37,26 @@ export default function MusicPlayer() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (playerRef.current && isReady) {
+    if (!playerRef.current || !isReady) return;
+
+    try {
       if (isPlaying) {
         playerRef.current.playVideo();
       } else {
         playerRef.current.pauseVideo();
       }
+    } catch (e) {
+      console.error("Player command failed", e);
     }
   }, [isPlaying, isReady]);
 
   useEffect(() => {
     if (playerRef.current && isReady && typeof playerRef.current.setVolume === 'function') {
-        playerRef.current.setVolume(volume);
+        try {
+            playerRef.current.setVolume(volume);
+        } catch (e) {
+            console.error("Set volume failed", e);
+        }
     }
   }, [volume, isReady]);
   
@@ -76,20 +84,14 @@ export default function MusicPlayer() {
     playerRef.current = event.target;
     setIsReady(true);
   };
+  
+  const onPlayerStateChange = (event: { data: number }) => {
+    // We get the player from the event target to ensure it's the correct, active instance
+    const player = event.target;
+    if (typeof player.getPlayerState !== 'function') return;
 
-  useEffect(() => {
-    if(isReady) {
-        if (typeof playerRef.current?.setVolume === 'function') {
-            playerRef.current.setVolume(volume);
-        }
-        if (isPlaying) {
-            playerRef.current?.playVideo();
-        }
-    }
-  }, [isReady, volume, isPlaying]);
-
-  const onPlayerStateChange = (event: { data: number, target: YouTubePlayer }) => {
-    if (event.data === 1) { // Playing
+    const playerState = player.getPlayerState();
+    if (playerState === 1) { // Playing
       play();
       startProgressLoop();
     } else { // Paused, Ended, Buffering etc.
