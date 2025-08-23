@@ -33,14 +33,17 @@ export default function MusicPlayer() {
   
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (playerRef.current && isPlaying) {
-      playerRef.current.playVideo();
-    } else if (playerRef.current && !isPlaying) {
-      playerRef.current.pauseVideo();
+    if (playerRef.current && isReady) {
+      if (isPlaying) {
+        playerRef.current.playVideo();
+      } else {
+        playerRef.current.pauseVideo();
+      }
     }
-  }, [isPlaying, currentSong.videoId]);
+  }, [isPlaying, isReady]);
 
   useEffect(() => {
     if (playerRef.current && playerRef.current.setVolume) {
@@ -71,6 +74,7 @@ export default function MusicPlayer() {
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     event.target.setVolume(volume);
+    setIsReady(true);
     if (isPlaying) {
       event.target.playVideo();
     }

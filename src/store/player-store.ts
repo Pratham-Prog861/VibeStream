@@ -45,7 +45,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       duration: 0,
     }
   }),
-  play: () => set({ isPlaying: true }),
+  play: () => set((state) => (state.currentSong.videoId ? { isPlaying: true } : {})),
   pause: () => set({ isPlaying: false }),
   setVolume: (volume) => set({ volume }),
   updateProgress: (progress, duration) => set({ progress, duration }),
