@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import AppSidebar from '@/components/layout/sidebar';
 import MusicPlayer from '@/components/layout/player';
+import '@/lib/firebase';
 
 export const metadata: Metadata = {
   title: 'VibeStream',
