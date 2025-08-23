@@ -1,7 +1,9 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import YouTube from 'react-youtube';
+import type { YouTubePlayer } from 'react-youtube';
 import {
   Play,
   Pause,
@@ -17,26 +19,85 @@ import { Button } from '@/components/ui/button';
 import { usePlayerStore } from '@/store/player-store';
 
 export default function MusicPlayer() {
-  const { currentSong, isPlaying, volume, play, pause, setVolume } = usePlayerStore();
+  const { 
+    currentSong, 
+    isPlaying, 
+    volume,
+    progress,
+    duration,
+    play, 
+    pause, 
+    setVolume,
+    updateProgress
+  } = usePlayerStore();
+  
+  const playerRef = useRef<YouTubePlayer | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const onPlayerReady = (event: any) => {
-    // access to player in all event handlers via event.target
-    event.target.setVolume(volume);
+  useEffect(() => {
+    if (playerRef.current && isPlaying) {
+      playerRef.current.playVideo();
+    } else if (playerRef.current && !isPlaying) {
+      playerRef.current.pauseVideo();
+    }
+  }, [isPlaying, currentSong.videoId]);
+
+  useEffect(() => {
+    if (playerRef.current && playerRef.current.setVolume) {
+        playerRef.current.setVolume(volume);
+    }
+  }, [volume]);
+  
+  const startProgressLoop = () => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    progressIntervalRef.current = setInterval(() => {
+      if (playerRef.current && playerRef.current.getCurrentTime && playerRef.current.getDuration) {
+        const currentTime = playerRef.current.getCurrentTime();
+        const totalDuration = playerRef.current.getDuration();
+        if (totalDuration > 0) {
+          updateProgress(currentTime, totalDuration);
+        }
+      }
+    }, 1000);
+  };
+  
+  const stopProgressLoop = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
   };
 
-  const onPlayerStateChange = (event: any) => {
-    // event.data can be:
-    // -1 (unstarted)
-    // 0 (ended)
-    // 1 (playing)
-    // 2 (paused)
-    // 3 (buffering)
-    // 5 (video cued)
-    if (event.data === 1) {
-      play();
-    } else if (event.data === 2) {
-      pause();
+  const onPlayerReady = (event: { target: YouTubePlayer }) => {
+    playerRef.current = event.target;
+    event.target.setVolume(volume);
+    if (isPlaying) {
+      event.target.playVideo();
     }
+  };
+
+  const onPlayerStateChange = (event: { data: number, target: YouTubePlayer }) => {
+    if (event.data === 1) { // Playing
+      play();
+      startProgressLoop();
+    } else { // Paused, Ended, Buffering etc.
+      pause();
+      stopProgressLoop();
+    }
+  };
+  
+  const onSliderChange = (value: number[]) => {
+    if (playerRef.current && playerRef.current.seekTo) {
+      const newTime = value[0];
+      playerRef.current.seekTo(newTime, true);
+      updateProgress(newTime, duration);
+    }
+  };
+  
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   return (
@@ -45,12 +106,13 @@ export default function MusicPlayer() {
         {/* Song Info */}
         <div className="flex items-center gap-4 w-1/4">
           <Image
-            src={currentSong.videoId ? `https://img.youtube.com/vi/${currentSong.videoId}/0.jpg` : "https://placehold.co/64x64/222629/4DBA99.png"}
+            src={currentSong.coverUrl || "https://placehold.co/64x64/222629/4DBA99.png"}
             alt="Album Art"
             width={64}
             height={64}
-            className="rounded-md"
+            className="rounded-md object-cover"
             data-ai-hint="album cover"
+            unoptimized
           />
           <div className="hidden lg:block">
             <h3 className="font-semibold truncate">{currentSong.title}</h3>
@@ -72,6 +134,7 @@ export default function MusicPlayer() {
               size="icon"
               className="h-12 w-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
               onClick={isPlaying ? pause : play}
+              disabled={!currentSong.videoId}
             >
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
@@ -83,9 +146,15 @@ export default function MusicPlayer() {
             </Button>
           </div>
           <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
-            <span>1:23</span>
-            <Slider defaultValue={[33]} max={100} step={1} className="flex-1" />
-            <span>3:45</span>
+            <span>{formatTime(progress)}</span>
+            <Slider 
+              value={[progress]} 
+              max={duration || 1} 
+              step={1} 
+              className="flex-1"
+              onValueChange={onSliderChange}
+            />
+            <span>{formatTime(duration)}</span>
           </div>
         </div>
 
@@ -99,8 +168,9 @@ export default function MusicPlayer() {
       </div>
       {currentSong.videoId && (
          <YouTube
+            key={currentSong.videoId}
             videoId={currentSong.videoId}
-            opts={{ height: '0', width: '0' }}
+            opts={{ height: '0', width: '0', playerVars: { autoplay: 1 } }}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
             className="absolute -z-10"

@@ -77,12 +77,12 @@ const generatePlaylistFlow = ai.defineFlow(
 
     const playlist = await Promise.all(
       output.songs.map(async song => {
-        const youtubeId = await searchYoutubeVideo(
+        const video = await searchYoutubeVideo(
           `${song.artist} - ${song.title}`
         );
         return {
           ...song,
-          youtubeId: youtubeId || 'dQw4w9WgXcQ', // Fallback to a default video
+          youtubeId: video ? video[0].videoId : 'dQw4w9WgXcQ', // Fallback to a default video
         };
       })
     );
