@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type Song = {
+export type Song = {
   title: string;
   artist: string;
   videoId: string | null;
@@ -32,11 +32,18 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   volume: 50,
   progress: 0,
   duration: 0,
-  playSong: (song) => set({ 
-    currentSong: { ...song, coverUrl: song.coverUrl || `https://img.youtube.com/vi/${song.videoId}/0.jpg` }, 
-    isPlaying: true,
-    progress: 0,
-    duration: 0,
+  playSong: (song) => set((state) => {
+    // If the same song is clicked, toggle play/pause, unless it's a new song.
+    if (state.currentSong.videoId === song.videoId) {
+      return { isPlaying: !state.isPlaying };
+    }
+    // New song
+    return { 
+      currentSong: { ...song, coverUrl: song.coverUrl || `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg` }, 
+      isPlaying: true,
+      progress: 0,
+      duration: 0,
+    }
   }),
   play: () => set({ isPlaying: true }),
   pause: () => set({ isPlaying: false }),

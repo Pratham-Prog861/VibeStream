@@ -1,6 +1,11 @@
+
+'use client';
+
 import Image from 'next/image';
 import { Play } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { usePlayerStore } from '@/store/player-store';
+import { useToast } from '@/hooks/use-toast';
+import { searchYoutubeVideo } from '@/services/youtube';
 
 type AlbumCardProps = {
   title: string;
@@ -10,8 +15,26 @@ type AlbumCardProps = {
 };
 
 export default function AlbumCard({ title, artist, coverUrl, aiHint }: AlbumCardProps) {
+  const { playSong } = usePlayerStore();
+  const { toast } = useToast();
+
+  const handlePlay = async () => {
+    // This is a simple implementation. We search for the title and artist on YouTube.
+    // In a real app, you might have a specific playlist ID or track IDs.
+    const results = await searchYoutubeVideo(`${title} ${artist}`, 1);
+    if (results && results.length > 0) {
+      playSong(results[0]);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Song not found',
+        description: `Could not find "${title}" on YouTube.`,
+      });
+    }
+  };
+
   return (
-    <div className="group relative cursor-pointer overflow-hidden rounded-lg">
+    <div className="group relative cursor-pointer overflow-hidden rounded-lg" onClick={handlePlay}>
         <Image
           src={coverUrl}
           alt={`Cover for ${title}`}
