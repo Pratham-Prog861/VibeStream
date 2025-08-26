@@ -71,31 +71,31 @@ export const madeForYou = [
   {
       name: 'Best Bollywood Romantic Songs',
       artist: 'T-Series',
-      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      coverUrl: 'https://i.ytimg.com/vi/r2fxo_T1N3g/hqdefault.jpg',
       aiHint: 'romantic couple',
   },
   {
       name: 'Evergreen Hits of KK',
       artist: 'T-Series',
-      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      coverUrl: 'https://i.ytimg.com/vi/p4gaG-uyY_k/hqdefault.jpg',
       aiHint: 'vintage microphone',
   },
   {
       name: 'Viral Songs Latest',
-      artist: 'Spotify',
-      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      artist: 'Chill Vibe',
+      coverUrl: 'https://i.ytimg.com/vi/GK_gTO4iYMM/hqdefault.jpg',
       aiHint: 'social media',
   },
   {
       name: 'Top Favourites on YouTube',
-      artist: 'YouTube',
-      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      artist: 'T-Series',
+      coverUrl: 'https://i.ytimg.com/vi/3rqw2iRds2g/hqdefault.jpg',
       aiHint: 'youtube logo',
   },
     {
       name: 'Non Stop Party Vibes',
       artist: 'Aditya Music',
-      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      coverUrl: 'https://i.ytimg.com/vi/Wbxy3-2K_2E/hqdefault.jpg',
       aiHint: 'party dance',
   },
 ];
