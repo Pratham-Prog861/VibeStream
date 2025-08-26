@@ -7,9 +7,8 @@ import { Play } from 'lucide-react';
 import { usePlayerStore, type Song } from '@/store/player-store';
 import { searchYoutubeVideo } from '@/services/youtube';
 import AlbumCard from '@/components/album-card';
-import { madeForYou } from '@/lib/data';
-import { featuredPlaylists } from '@/lib/featured-playlists';
-import { Separator } from '@/components/ui/separator';
+import { madeForYou, featuredPlaylists } from '@/lib/data';
+import { Separator } from '@/components/ui/separator'; // Corrected import path
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -57,7 +56,7 @@ export default function Home() {
   }, [toast]);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 mb-32">
       <section>
         <h1 className="font-headline text-4xl font-bold">Listen Now</h1>
         <p className="text-muted-foreground mt-2">Top picks for you. Updated daily.</p>
@@ -116,7 +115,7 @@ export default function Home() {
         <h2 className="font-headline text-2xl font-semibold mb-4">Featured Playlists</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {featuredPlaylists.map((playlist) => (
-            <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.curator} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
+            <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.artist} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
           ))}
         </div>
       </section>
