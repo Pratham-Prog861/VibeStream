@@ -34,17 +34,19 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   progress: 0,
   duration: 0,
   playSong: (song) => set((state) => {
-    // If the same song is clicked, toggle play/pause.
-    if (state.currentSong.videoId === song.videoId) {
-      return { isPlaying: !state.isPlaying };
+    // If a new song is clicked, always play it.
+    // If the same song is clicked, the play/pause logic is handled by the play/pause actions.
+    if (state.currentSong.videoId !== song.videoId) {
+      return { 
+        currentSong: { ...song, coverUrl: song.coverUrl || `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg` }, 
+        isPlaying: true,
+        progress: 0,
+        duration: 0,
+      }
     }
-    // If a new song is clicked, play it.
-    return { 
-      currentSong: { ...song, coverUrl: song.coverUrl || `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg` }, 
-      isPlaying: true,
-      progress: 0,
-      duration: 0,
-    }
+    // If it's the same song, just ensure it's set to play.
+    // The player button's onClick will handle toggling.
+    return { isPlaying: true };
   }),
   play: () => set((state) => (state.currentSong.videoId ? { isPlaying: true } : {})),
   pause: () => set({ isPlaying: false }),
