@@ -20,41 +20,46 @@ import { Button } from '@/components/ui/button';
 import { usePlayerStore } from '@/store/player-store';
 
 export default function MusicPlayer() {
-  const { 
-    currentSong, 
-    isPlaying, 
+  const {
+    currentSong,
+    isPlaying,
     volume,
     progress,
     duration,
-    play, 
-    pause, 
+    play,
+    pause,
     setVolume,
-    updateProgress
+    updateProgress,
   } = usePlayerStore();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  // When the song changes, the player needs to be ready for the new video.
   useEffect(() => {
-    // When the song changes, the player is no longer ready until the new onReady event fires.
     setIsReady(false);
   }, [currentSong.videoId]);
 
+  // Effect to control playback state (play/pause)
   useEffect(() => {
-    if (!isReady || !playerRef.current || typeof playerRef.current.getPlayerState !== 'function') return;
-    
+    if (!isReady || !playerRef.current) return;
+
     try {
       if (isPlaying) {
         playerRef.current.playVideo();
+        startProgressLoop();
       } else {
         playerRef.current.pauseVideo();
+        stopProgressLoop();
       }
     } catch (e) {
       console.error("Player command (play/pause) failed", e);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, isReady]);
 
+  // Effect to control volume
   useEffect(() => {
     if (isReady && playerRef.current && typeof playerRef.current.setVolume === 'function') {
       try {
@@ -68,7 +73,7 @@ export default function MusicPlayer() {
   const startProgressLoop = () => {
     stopProgressLoop();
     progressIntervalRef.current = setInterval(() => {
-      if (isReady && playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
+      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
         try {
             const currentTime = playerRef.current.getCurrentTime();
             const totalDuration = playerRef.current.getDuration();
@@ -90,22 +95,19 @@ export default function MusicPlayer() {
     }
   };
 
+  // Called when the YouTube player is ready
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     setIsReady(true);
   };
   
-  const onPlayerStateChange = (event: { target: any; data: number }) => {
-    // Fallback check if player state is not available.
-    if (typeof event.target.getPlayerState !== 'function') return;
-
-    const playerState = event.target.getPlayerState();
-    if (playerState === 1) { // Playing
+  // Called when the player's state changes (playing, paused, etc.)
+  const onPlayerStateChange = (event: { data: number }) => {
+    // 1: playing, 2: paused
+    if (event.data === 1 && !isPlaying) {
       play();
-      startProgressLoop();
-    } else { // Paused, Ended, Buffering etc.
+    } else if (event.data !== 1 && isPlaying) {
       pause();
-      stopProgressLoop();
     }
   };
   
