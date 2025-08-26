@@ -1,3 +1,4 @@
+
 export const albums = [
   {
     title: 'Cosmic Echoes',
@@ -68,27 +69,33 @@ export const recentlyPlayed = albums.slice(0, 4);
 
 export const madeForYou = [
   {
-      name: 'Daily Mix 1',
-      songCount: 50,
+      name: 'Best Bollywood Romantic Songs',
+      artist: 'T-Series',
       coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
-      aiHint: 'abstract gradient',
+      aiHint: 'romantic couple',
   },
   {
-      name: 'Daily Mix 2',
-      songCount: 50,
+      name: 'Evergreen Hits of KK',
+      artist: 'T-Series',
       coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
-      aiHint: 'colorful pattern',
+      aiHint: 'vintage microphone',
   },
   {
-      name: 'Discover Weekly',
-      songCount: 30,
+      name: 'Viral Songs Latest',
+      artist: 'Spotify',
       coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
-      aiHint: 'galaxy stars',
+      aiHint: 'social media',
   },
   {
-      name: 'Release Radar',
-      songCount: 30,
+      name: 'Top Favourites on YouTube',
+      artist: 'YouTube',
       coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
-      aiHint: 'radar screen',
+      aiHint: 'youtube logo',
+  },
+    {
+      name: 'Non Stop Party Vibes',
+      artist: 'Aditya Music',
+      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      aiHint: 'party dance',
   },
 ];

@@ -105,7 +105,7 @@ export default function Home() {
         <h2 className="font-headline text-2xl font-semibold mb-4">Made For You</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {madeForYou.map((playlist) => (
-            <AlbumCard key={playlist.name} title={playlist.name} artist={`${playlist.songCount} songs`} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
+            <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.artist} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
           ))}
         </div>
       </section>
