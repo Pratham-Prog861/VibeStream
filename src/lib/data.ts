@@ -66,4 +66,29 @@ export const playlists = [
 
 export const recentlyPlayed = albums.slice(0, 4);
 
-export const madeForYou = playlists.slice(0, 2);
+export const madeForYou = [
+  {
+      name: 'Daily Mix 1',
+      songCount: 50,
+      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      aiHint: 'abstract gradient',
+  },
+  {
+      name: 'Daily Mix 2',
+      songCount: 50,
+      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      aiHint: 'colorful pattern',
+  },
+  {
+      name: 'Discover Weekly',
+      songCount: 30,
+      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      aiHint: 'galaxy stars',
+  },
+  {
+      name: 'Release Radar',
+      songCount: 30,
+      coverUrl: 'https://placehold.co/300x300/222629/4DBA99.png',
+      aiHint: 'radar screen',
+  },
+];

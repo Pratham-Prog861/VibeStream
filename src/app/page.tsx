@@ -7,7 +7,8 @@ import { Play } from 'lucide-react';
 import { usePlayerStore, type Song } from '@/store/player-store';
 import { searchYoutubeVideo } from '@/services/youtube';
 import AlbumCard from '@/components/album-card';
-import { playlists, recentlyPlayed, madeForYou } from '@/lib/data';
+import { madeForYou } from '@/lib/data';
+import { featuredPlaylists } from '@/lib/featured-playlists';
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +23,8 @@ export default function Home() {
     async function fetchTrendingMusic() {
       try {
         setLoading(true);
-        const results = await searchYoutubeVideo('Top Hits 2024', 10);
+        // Fetch top individual songs
+        const results = await searchYoutubeVideo('Top new songs 2024', 10);
         if (results) {
           setTrending(results);
         }
@@ -99,8 +101,8 @@ export default function Home() {
       <section>
         <h2 className="font-headline text-2xl font-semibold mb-4">Featured Playlists</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {playlists.map((playlist) => (
-            <AlbumCard key={playlist.name} title={playlist.name} artist={`${playlist.songCount} songs`} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
+          {featuredPlaylists.map((playlist) => (
+            <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.curator} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
           ))}
         </div>
       </section>
