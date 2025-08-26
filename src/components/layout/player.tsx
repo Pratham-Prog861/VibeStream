@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -20,48 +19,50 @@ import { Button } from '@/components/ui/button';
 import { usePlayerStore } from '@/store/player-store';
 
 export default function MusicPlayer() {
-  const {
-    currentSong,
-    isPlaying,
+  const { 
+    currentSong, 
+    isPlaying, 
     volume,
     progress,
     duration,
-    play,
-    pause,
+    play, 
+    pause, 
     setVolume,
-    updateProgress,
+    updateProgress
   } = usePlayerStore();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  // When the song changes, the player needs to be ready for the new video.
+  // When song changes, reset player state to avoid stale refs
   useEffect(() => {
+    playerRef.current = null;
     setIsReady(false);
   }, [currentSong.videoId]);
 
-  // Effect to control playback state (play/pause)
+  // Sync play/pause state only when ready and iframe is alive
   useEffect(() => {
-    if (!isReady || !playerRef.current) return;
-
-    try {
-      if (isPlaying) {
-        playerRef.current.playVideo();
-        startProgressLoop();
-      } else {
-        playerRef.current.pauseVideo();
-        stopProgressLoop();
+    if (!playerRef.current || !isReady) return;
+    const player = playerRef.current;
+    const action = async () => {
+      try {
+        if (isPlaying) {
+          player.playVideo();
+        } else {
+          player.pauseVideo();
+        }
+      } catch (e) {
+        console.error("Player command failed", e);
       }
-    } catch (e) {
-      console.error("Player command (play/pause) failed", e);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    };
+    // Run async to avoid running during iframe teardown
+    setTimeout(action, 0);
   }, [isPlaying, isReady]);
 
-  // Effect to control volume
+  // Sync volume with player once ready
   useEffect(() => {
-    if (isReady && playerRef.current && typeof playerRef.current.setVolume === 'function') {
+    if (playerRef.current && isReady && typeof playerRef.current.setVolume === 'function') {
       try {
         playerRef.current.setVolume(volume);
       } catch (e) {
@@ -74,15 +75,10 @@ export default function MusicPlayer() {
     stopProgressLoop();
     progressIntervalRef.current = setInterval(() => {
       if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
-        try {
-            const currentTime = playerRef.current.getCurrentTime();
-            const totalDuration = playerRef.current.getDuration();
-            if (totalDuration > 0) {
-              updateProgress(currentTime, totalDuration);
-            }
-        } catch(e) {
-            console.error("Failed to get progress", e);
-            stopProgressLoop();
+        const currentTime = playerRef.current.getCurrentTime();
+        const totalDuration = playerRef.current.getDuration();
+        if (totalDuration > 0) {
+          updateProgress(currentTime, totalDuration);
         }
       }
     }, 1000);
@@ -95,24 +91,37 @@ export default function MusicPlayer() {
     }
   };
 
-  // Called when the YouTube player is ready
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     setIsReady(true);
+    // Initialize volume after iframe is mounted
+    try {
+      event.target.setVolume(volume);
+    } catch (e) {
+      console.error("Initial volume set failed", e);
+    }
+    // If play was requested before ready, honor it now
+    if (isPlaying) {
+      setTimeout(() => event.target.playVideo(), 0);
+    }
   };
   
-  // Called when the player's state changes (playing, paused, etc.)
-  const onPlayerStateChange = (event: { data: number }) => {
-    // 1: playing, 2: paused
-    if (event.data === 1 && !isPlaying) {
+  const onPlayerStateChange = (event: { target: any; data: number }) => {
+    const player = event.target;
+    if (typeof player.getPlayerState !== 'function') return;
+
+    const playerState = player.getPlayerState();
+    if (playerState === 1) { // Playing
       play();
-    } else if (event.data !== 1 && isPlaying) {
+      startProgressLoop();
+    } else { // Paused, Ended, Buffering etc.
       pause();
+      stopProgressLoop();
     }
   };
   
   const onSliderChange = (value: number[]) => {
-    if (isReady && playerRef.current && typeof playerRef.current.seekTo === 'function') {
+    if (playerRef.current && isReady && typeof playerRef.current.seekTo === 'function') {
       const newTime = value[0];
       playerRef.current.seekTo(newTime, true);
       updateProgress(newTime, duration);
@@ -160,7 +169,7 @@ export default function MusicPlayer() {
               size="icon"
               className="h-12 w-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
               onClick={isPlaying ? pause : play}
-              disabled={!currentSong.videoId}
+              disabled={!currentSong.videoId || !isReady}
             >
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
