@@ -13,6 +13,17 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const trendingSongs = [
+  "Shaky ( Official #Video ) Sanju Rathod Ft. Isha Malviya | G-Spark |",
+  "Monica - Lyric Video| COOLIE | Superstar Rajinikanth | Sun Pictures | Lokesh | Anirudh | Pooja Hegde",
+  "Janaab-e-Aali | Full Song | WAR 2 | Hrithik Roshan, NTR | Pritam, Sachet Tandon, Saaj Bhatt, Amitabh",
+  "Uyi Amma - Azaad | Aaman D, Rasha Thadani| Madhubanti Bagchi,Amit Trivedi,Amitabh| Bosco| Abhishek K",
+  "Afusic - Pal Pal (Official Music Video) Prod. @AliSoomroMusic",
+  "Guru Randhawa - SIRRA ( Official Video )",
+  "Guru Randhawa - QATAL - (Official Video)",
+  "LAAL PARI (Song): Yo Yo Honey Singh | Sajid Nadiadwala | Tarun Mansukhani | Housefull 5 - 6th June"
+];
+
 export default function Home() {
   const [trending, setTrending] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,11 +34,14 @@ export default function Home() {
     async function fetchTrendingMusic() {
       try {
         setLoading(true);
-        // Fetch top individual songs
-        const results = await searchYoutubeVideo('Top new songs 2024', 10);
-        if (results) {
-          setTrending(results);
-        }
+        const results = await Promise.all(
+          trendingSongs.map(async (songQuery) => {
+            const video = await searchYoutubeVideo(songQuery, 1);
+            return video ? video[0] : null;
+          })
+        );
+        const validResults = results.filter((song): song is Song => song !== null);
+        setTrending(validResults);
       } catch (error) {
         console.error('Error fetching trending music:', error);
         toast({
