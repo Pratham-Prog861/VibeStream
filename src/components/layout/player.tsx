@@ -36,9 +36,17 @@ export default function MusicPlayer() {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  // Reset player state whenever song changes
   useEffect(() => {
-    if (!playerRef.current || !isReady) return;
+    if (playerRef.current) {
+        playerRef.current = null;
+    }
+    setIsReady(false);
+  }, [currentSong.videoId]);
 
+  useEffect(() => {
+    if (!isReady || !playerRef.current || typeof playerRef.current.getPlayerState !== 'function') return;
+    
     try {
       if (isPlaying) {
         playerRef.current.playVideo();
@@ -46,24 +54,24 @@ export default function MusicPlayer() {
         playerRef.current.pauseVideo();
       }
     } catch (e) {
-      console.error("Player command failed", e);
+      console.error("Player command (play/pause) failed", e);
     }
   }, [isPlaying, isReady]);
 
   useEffect(() => {
-    if (playerRef.current && isReady && typeof playerRef.current.setVolume === 'function') {
-        try {
-            playerRef.current.setVolume(volume);
-        } catch (e) {
-            console.error("Set volume failed", e);
-        }
+    if (isReady && playerRef.current && typeof playerRef.current.setVolume === 'function') {
+      try {
+        playerRef.current.setVolume(volume);
+      } catch (e) {
+        console.error("Set volume failed", e);
+      }
     }
   }, [volume, isReady]);
   
   const startProgressLoop = () => {
-    stopProgressLoop(); // Ensure no multiple loops are running
+    stopProgressLoop();
     progressIntervalRef.current = setInterval(() => {
-      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
+      if (isReady && playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
         const currentTime = playerRef.current.getCurrentTime();
         const totalDuration = playerRef.current.getDuration();
         if (totalDuration > 0) {
@@ -83,16 +91,19 @@ export default function MusicPlayer() {
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     setIsReady(true);
+    try {
+      if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
+        playerRef.current.setVolume(volume);
+      }
+    } catch (e) {
+      console.error("Initial volume set failed", e);
+    }
   };
   
-  const onPlayerStateChange = (event: {
-    target: any; data: number 
-}) => {
-    // We get the player from the event target to ensure it's the correct, active instance
-    const player = event.target;
-    if (typeof player.getPlayerState !== 'function') return;
+  const onPlayerStateChange = (event: { target: any; data: number }) => {
+    if (typeof event.target.getPlayerState !== 'function') return;
 
-    const playerState = player.getPlayerState();
+    const playerState = event.target.getPlayerState();
     if (playerState === 1) { // Playing
       play();
       startProgressLoop();
@@ -103,7 +114,7 @@ export default function MusicPlayer() {
   };
   
   const onSliderChange = (value: number[]) => {
-    if (playerRef.current && isReady && typeof playerRef.current.seekTo === 'function') {
+    if (isReady && playerRef.current && typeof playerRef.current.seekTo === 'function') {
       const newTime = value[0];
       playerRef.current.seekTo(newTime, true);
       updateProgress(newTime, duration);
@@ -151,7 +162,7 @@ export default function MusicPlayer() {
               size="icon"
               className="h-12 w-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
               onClick={isPlaying ? pause : play}
-              disabled={!currentSong.videoId}
+              disabled={!currentSong.videoId || !isReady}
             >
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
