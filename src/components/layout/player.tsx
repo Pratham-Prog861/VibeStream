@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -35,38 +36,46 @@ export default function MusicPlayer() {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  // When song changes, reset player state to avoid stale refs
+  // Reset readiness state when the song changes
   useEffect(() => {
-    playerRef.current = null;
     setIsReady(false);
   }, [currentSong.videoId]);
 
-  // Sync play/pause state only when ready and iframe is alive
+  // Effect to control the YouTube player instance
   useEffect(() => {
-    if (!playerRef.current || !isReady) return;
     const player = playerRef.current;
-    const action = async () => {
+    if (!isReady || !player) {
+      return;
+    }
+  
+    // Encapsulate player commands in a try-catch block
+    // to gracefully handle cases where the player might not be available.
+    const safePlayerAction = (action: () => void) => {
       try {
-        if (isPlaying) {
-          player.playVideo();
-        } else {
-          player.pauseVideo();
+        if (typeof player.getPlayerState === 'function' && player.getPlayerState() !== -1) {
+            action();
         }
       } catch (e) {
-        console.error("Player command failed", e);
+        console.error("Player command failed:", e);
       }
     };
-    // Run async to avoid running during iframe teardown
-    setTimeout(action, 0);
+    
+    if (isPlaying) {
+      safePlayerAction(() => player.playVideo());
+    } else {
+      safePlayerAction(() => player.pauseVideo());
+    }
+
   }, [isPlaying, isReady]);
 
-  // Sync volume with player once ready
+  // Effect to sync volume
   useEffect(() => {
-    if (playerRef.current && isReady && typeof playerRef.current.setVolume === 'function') {
+    const player = playerRef.current;
+    if (isReady && player && typeof player.setVolume === 'function') {
       try {
-        playerRef.current.setVolume(volume);
+        player.setVolume(volume);
       } catch (e) {
-        console.error("Set volume failed", e);
+        console.error("Set volume failed:", e);
       }
     }
   }, [volume, isReady]);
@@ -74,9 +83,10 @@ export default function MusicPlayer() {
   const startProgressLoop = () => {
     stopProgressLoop();
     progressIntervalRef.current = setInterval(() => {
-      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
-        const currentTime = playerRef.current.getCurrentTime();
-        const totalDuration = playerRef.current.getDuration();
+      const player = playerRef.current;
+      if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
+        const currentTime = player.getCurrentTime();
+        const totalDuration = player.getDuration();
         if (totalDuration > 0) {
           updateProgress(currentTime, totalDuration);
         }
@@ -94,36 +104,25 @@ export default function MusicPlayer() {
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     setIsReady(true);
-    // Initialize volume after iframe is mounted
-    try {
-      event.target.setVolume(volume);
-    } catch (e) {
-      console.error("Initial volume set failed", e);
-    }
-    // If play was requested before ready, honor it now
-    if (isPlaying) {
-      setTimeout(() => event.target.playVideo(), 0);
-    }
   };
   
-  const onPlayerStateChange = (event: { target: any; data: number }) => {
-    const player = event.target;
-    if (typeof player.getPlayerState !== 'function') return;
-
-    const playerState = player.getPlayerState();
-    if (playerState === 1) { // Playing
-      play();
+  const onPlayerStateChange = (event: { data: number }) => {
+    // Player state codes from YouTube Iframe API
+    // -1: unstarted, 0: ended, 1: playing, 2: paused, 3: buffering, 5: video cued
+    if (event.data === 1) { // Playing
+      if(!isPlaying) play();
       startProgressLoop();
     } else { // Paused, Ended, Buffering etc.
-      pause();
+      if(isPlaying) pause();
       stopProgressLoop();
     }
   };
   
   const onSliderChange = (value: number[]) => {
-    if (playerRef.current && isReady && typeof playerRef.current.seekTo === 'function') {
+    const player = playerRef.current;
+    if (player && isReady && typeof player.seekTo === 'function') {
       const newTime = value[0];
-      playerRef.current.seekTo(newTime, true);
+      player.seekTo(newTime, true);
       updateProgress(newTime, duration);
     }
   };
@@ -169,7 +168,7 @@ export default function MusicPlayer() {
               size="icon"
               className="h-12 w-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
               onClick={isPlaying ? pause : play}
-              disabled={!currentSong.videoId || !isReady}
+              disabled={!currentSong.videoId}
             >
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
@@ -205,7 +204,7 @@ export default function MusicPlayer() {
          <YouTube
             key={currentSong.videoId}
             videoId={currentSong.videoId}
-            opts={{ height: '0', width: '0', playerVars: { autoplay: 1 } }}
+            opts={{ height: '0', width: '0', playerVars: { autoplay: isPlaying ? 1 : 0 } }}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
             onError={(e: any) => console.error('YT Player Error:', e)}
