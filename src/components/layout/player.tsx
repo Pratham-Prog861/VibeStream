@@ -37,10 +37,7 @@ export default function MusicPlayer() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Reset player state whenever song changes
-    if (playerRef.current) {
-        playerRef.current = null;
-    }
+    // When the song changes, the player is no longer ready until the new onReady event fires.
     setIsReady(false);
   }, [currentSong.videoId]);
 
@@ -72,10 +69,15 @@ export default function MusicPlayer() {
     stopProgressLoop();
     progressIntervalRef.current = setInterval(() => {
       if (isReady && playerRef.current && typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.getDuration === 'function') {
-        const currentTime = playerRef.current.getCurrentTime();
-        const totalDuration = playerRef.current.getDuration();
-        if (totalDuration > 0) {
-          updateProgress(currentTime, totalDuration);
+        try {
+            const currentTime = playerRef.current.getCurrentTime();
+            const totalDuration = playerRef.current.getDuration();
+            if (totalDuration > 0) {
+              updateProgress(currentTime, totalDuration);
+            }
+        } catch(e) {
+            console.error("Failed to get progress", e);
+            stopProgressLoop();
         }
       }
     }, 1000);
@@ -91,16 +93,10 @@ export default function MusicPlayer() {
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     setIsReady(true);
-    try {
-      if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
-        playerRef.current.setVolume(volume);
-      }
-    } catch (e) {
-      console.error("Initial volume set failed", e);
-    }
   };
   
   const onPlayerStateChange = (event: { target: any; data: number }) => {
+    // Fallback check if player state is not available.
     if (typeof event.target.getPlayerState !== 'function') return;
 
     const playerState = event.target.getPlayerState();
