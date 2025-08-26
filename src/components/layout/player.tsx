@@ -36,8 +36,8 @@ export default function MusicPlayer() {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  // Reset player state whenever song changes
   useEffect(() => {
+    // Reset player state whenever song changes
     if (playerRef.current) {
         playerRef.current = null;
     }
@@ -162,7 +162,7 @@ export default function MusicPlayer() {
               size="icon"
               className="h-12 w-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
               onClick={isPlaying ? pause : play}
-              disabled={!currentSong.videoId || !isReady}
+              disabled={!currentSong.videoId}
             >
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
