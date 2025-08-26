@@ -39,8 +39,14 @@ export default function Home() {
             return video ? video[0] : null;
           })
         );
-        const validResults = results.filter((song): song is Song => song !== null);
-        setTrending(validResults);
+        const videos = (results ?? []).filter((v): v is NonNullable<typeof v> => v !== null);
+        const songs: Song[] = videos.map((v) => ({
+          title: v.title,
+          artist: v.artist,
+          videoId: v.videoId,
+          coverUrl: v.coverUrl,
+        }));
+        setTrending(songs);
       } catch (error) {
         console.error('Error fetching trending music:', error);
         toast({
@@ -58,12 +64,12 @@ export default function Home() {
   return (
     <div className="space-y-12 mb-32">
       <section>
-        <h1 className="font-headline text-4xl font-bold">Listen Now</h1>
+        <h1 className="font-headline text-4xl font-bold tracking-tight">Listen Now</h1>
         <p className="text-muted-foreground mt-2">Top picks for you. Updated daily.</p>
       </section>
 
       <section>
-        <h2 className="font-headline text-2xl font-semibold mb-4">Trending Now</h2>
+        <h2 className="font-headline text-2xl font-semibold tracking-tight mb-4">Trending Now</h2>
         {loading ? (
            <div className="w-full text-center pt-8">
              <Loader2 className="mx-auto h-8 w-8 animate-spin text-accent" />
@@ -74,7 +80,7 @@ export default function Home() {
             {trending.map((song) => (
               <div
                 key={song.videoId}
-                className="group relative cursor-pointer overflow-hidden rounded-lg"
+                className="group relative cursor-pointer overflow-hidden rounded-xl shadow-sm ring-1 ring-border/60 transition-all hover:shadow-xl hover:ring-border"
                 onClick={() => playSong(song)}
               >
                 <Image
@@ -82,14 +88,14 @@ export default function Home() {
                   alt={`Cover for ${song.title}`}
                   width={300}
                   height={300}
-                  className="aspect-square w-full object-cover transition-transform group-hover:scale-105"
+                  className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="font-headline text-lg font-semibold truncate text-white">{song.title}</h3>
+                  <h3 className="font-headline text-lg font-semibold truncate text-white drop-shadow-sm">{song.title}</h3>
                   <p className="text-sm text-white/80 truncate">{song.artist}</p>
                 </div>
-                <div className="absolute right-4 top-[calc(50%-2rem)] flex h-12 w-12 translate-y-4 items-center justify-center rounded-full bg-accent text-accent-foreground opacity-0 shadow-lg transition-all group-hover:translate-y-0 group-hover:opacity-100">
+                <div className="absolute right-4 top-[calc(50%-2rem)] flex h-12 w-12 translate-y-4 items-center justify-center rounded-full bg-accent text-accent-foreground opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                   <Play className="h-6 w-6 fill-current ml-1" />
                 </div>
               </div>
@@ -101,7 +107,7 @@ export default function Home() {
       <Separator />
 
       <section>
-        <h2 className="font-headline text-2xl font-semibold mb-4">Made For You</h2>
+        <h2 className="font-headline text-2xl font-semibold tracking-tight mb-4">Made For You</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {madeForYou.map((playlist) => (
             <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.artist} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
@@ -112,7 +118,7 @@ export default function Home() {
       <Separator />
 
       <section>
-        <h2 className="font-headline text-2xl font-semibold mb-4">Featured Playlists</h2>
+        <h2 className="font-headline text-2xl font-semibold tracking-tight mb-4">Featured Playlists</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {featuredPlaylists.map((playlist) => (
             <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.artist} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>

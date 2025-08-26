@@ -51,7 +51,7 @@ export default function AppSidebar() {
       <div className="fixed left-4 top-4 z-50 md:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="backdrop-blur-md bg-background/70 border-border">
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
@@ -62,7 +62,7 @@ export default function AppSidebar() {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 flex-col md:fixed md:inset-y-0 md:flex">
+      <aside className="hidden w-64 flex-col md:fixed md:inset-y-0 md:flex border-r border-sidebar-border bg-sidebar/60 backdrop-blur-md">
         <NavContent />
       </aside>
     </>

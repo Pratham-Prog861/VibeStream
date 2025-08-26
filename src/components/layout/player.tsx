@@ -135,7 +135,7 @@ export default function MusicPlayer() {
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/80 backdrop-blur-sm">
+    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/70 backdrop-blur-md">
       <div className="flex h-24 items-center justify-between px-4 md:px-6 md:ml-64">
         {/* Song Info */}
         <div className="flex items-center gap-4 w-1/4">
@@ -157,25 +157,25 @@ export default function MusicPlayer() {
         {/* Player Controls */}
         <div className="flex flex-1 flex-col items-center gap-2 max-w-2xl">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
               <Shuffle className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
               <SkipBack className="h-6 w-6" />
             </Button>
             <Button
               variant="default"
               size="icon"
-              className="h-12 w-12 rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
+              className="h-12 w-12 rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90"
               onClick={isPlaying ? pause : play}
               disabled={!currentSong.videoId}
             >
               {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
               <SkipForward className="h-6 w-6" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
               <Repeat className="h-5 w-5" />
             </Button>
           </div>
