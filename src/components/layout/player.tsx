@@ -44,7 +44,7 @@ export default function MusicPlayer() {
   // Effect to control the YouTube player instance
   useEffect(() => {
     const player = playerRef.current;
-    if (!isReady || !player) {
+    if (!isReady || !player || !currentSong.videoId) {
       return;
     }
   
@@ -52,11 +52,21 @@ export default function MusicPlayer() {
     // to gracefully handle cases where the player might not be available.
     const safePlayerAction = (action: () => void) => {
       try {
-        if (typeof player.getPlayerState === 'function' && player.getPlayerState() !== -1) {
+        // Check if player methods exist and player is in a valid state
+        if (player && 
+            typeof player.getPlayerState === 'function' && 
+            typeof player.playVideo === 'function' &&
+            typeof player.pauseVideo === 'function') {
+          const playerState = player.getPlayerState();
+          // Only proceed if player is in a valid state (not -1: unstarted)
+          if (playerState !== -1 && playerState !== undefined) {
             action();
+          }
         }
       } catch (e) {
         console.error("Player command failed:", e);
+        // If player is in an invalid state, reset readiness
+        setIsReady(false);
       }
     };
     
@@ -66,29 +76,38 @@ export default function MusicPlayer() {
       safePlayerAction(() => player.pauseVideo());
     }
 
-  }, [isPlaying, isReady]);
+  }, [isPlaying, isReady, currentSong.videoId]);
 
   // Effect to sync volume
   useEffect(() => {
     const player = playerRef.current;
-    if (isReady && player && typeof player.setVolume === 'function') {
+    if (isReady && player && currentSong.videoId && typeof player.setVolume === 'function') {
       try {
         player.setVolume(volume);
       } catch (e) {
         console.error("Set volume failed:", e);
+        setIsReady(false);
       }
     }
-  }, [volume, isReady]);
+  }, [volume, isReady, currentSong.videoId]);
   
   const startProgressLoop = () => {
     stopProgressLoop();
     progressIntervalRef.current = setInterval(() => {
       const player = playerRef.current;
-      if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
-        const currentTime = player.getCurrentTime();
-        const totalDuration = player.getDuration();
-        if (totalDuration > 0) {
-          updateProgress(currentTime, totalDuration);
+      if (player && 
+          currentSong.videoId && 
+          typeof player.getCurrentTime === 'function' && 
+          typeof player.getDuration === 'function') {
+        try {
+          const currentTime = player.getCurrentTime();
+          const totalDuration = player.getDuration();
+          if (totalDuration > 0 && currentTime >= 0) {
+            updateProgress(currentTime, totalDuration);
+          }
+        } catch (e) {
+          console.error("Progress tracking failed:", e);
+          stopProgressLoop();
         }
       }
     }, 1000);
@@ -102,28 +121,43 @@ export default function MusicPlayer() {
   };
 
   const onPlayerReady = (event: { target: YouTubePlayer }) => {
-    playerRef.current = event.target;
-    setIsReady(true);
+    try {
+      playerRef.current = event.target;
+      setIsReady(true);
+    } catch (e) {
+      console.error("Player ready failed:", e);
+      setIsReady(false);
+    }
   };
   
   const onPlayerStateChange = (event: { data: number }) => {
-    // Player state codes from YouTube Iframe API
-    // -1: unstarted, 0: ended, 1: playing, 2: paused, 3: buffering, 5: video cued
-    if (event.data === 1) { // Playing
-      if(!isPlaying) play();
-      startProgressLoop();
-    } else { // Paused, Ended, Buffering etc.
-      if(isPlaying) pause();
-      stopProgressLoop();
+    try {
+      // Player state codes from YouTube Iframe API
+      // -1: unstarted, 0: ended, 1: playing, 2: paused, 3: buffering, 5: video cued
+      if (event.data === 1) { // Playing
+        if(!isPlaying) play();
+        startProgressLoop();
+      } else { // Paused, Ended, Buffering etc.
+        if(isPlaying) pause();
+        stopProgressLoop();
+      }
+    } catch (e) {
+      console.error("Player state change failed:", e);
+      setIsReady(false);
     }
   };
   
   const onSliderChange = (value: number[]) => {
     const player = playerRef.current;
-    if (player && isReady && typeof player.seekTo === 'function') {
-      const newTime = value[0];
-      player.seekTo(newTime, true);
-      updateProgress(newTime, duration);
+    if (player && isReady && currentSong.videoId && typeof player.seekTo === 'function') {
+      try {
+        const newTime = value[0];
+        player.seekTo(newTime, true);
+        updateProgress(newTime, duration);
+      } catch (e) {
+        console.error("Seek failed:", e);
+        setIsReady(false);
+      }
     }
   };
   
@@ -135,52 +169,72 @@ export default function MusicPlayer() {
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/70 backdrop-blur-md">
-      <div className="flex h-24 items-center justify-between px-4 md:px-6 md:ml-64">
+    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/80 backdrop-blur-xl shadow-2xl">
+      <div className="flex h-28 items-center justify-between px-6 md:px-8 md:ml-64">
         {/* Song Info */}
         <div className="flex items-center gap-4 w-1/4">
           <Image
             src={currentSong.coverUrl || "https://placehold.co/64x64/222629/4DBA99.png"}
             alt="Album Art"
-            width={64}
-            height={64}
-            className="rounded-md object-cover"
+            width={72}
+            height={72}
+            className="rounded-lg object-cover shadow-md"
             data-ai-hint="album cover"
             unoptimized
           />
           <div className="hidden lg:block">
-            <h3 className="font-semibold truncate">{currentSong.title}</h3>
-            <p className="text-sm text-muted-foreground truncate">{currentSong.artist}</p>
+            <h3 className="font-semibold truncate text-foreground">{currentSong.title}</h3>
+            <p className="text-sm text-foreground/70 truncate">{currentSong.artist}</p>
           </div>
         </div>
 
         {/* Player Controls */}
         <div className="flex flex-1 flex-col items-center gap-2 max-w-2xl">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+              title="Shuffle"
+            >
               <Shuffle className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+              title="Previous"
+            >
               <SkipBack className="h-6 w-6" />
             </Button>
             <Button
               variant="default"
               size="icon"
-              className="h-12 w-12 rounded-full bg-accent text-accent-foreground shadow-md hover:bg-accent/90"
+              className="h-14 w-14 rounded-full bg-accent text-accent-foreground shadow-lg hover:bg-accent/90 hover:scale-105 transition-all"
               onClick={isPlaying ? pause : play}
               disabled={!currentSong.videoId}
             >
-              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
+              {isPlaying ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 fill-current ml-1" />}
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+              title="Next"
+            >
               <SkipForward className="h-6 w-6" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent/20">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+              title="Repeat"
+            >
               <Repeat className="h-5 w-5" />
             </Button>
           </div>
-          <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
-            <span>{formatTime(progress)}</span>
+          <div className="flex w-full items-center gap-3 text-xs text-foreground/70">
+            <span className="min-w-[2.5rem] text-right font-mono">{formatTime(progress)}</span>
             <Slider 
               value={[progress]} 
               max={duration || 1} 
@@ -188,26 +242,48 @@ export default function MusicPlayer() {
               className="flex-1"
               onValueChange={onSliderChange}
             />
-            <span>{formatTime(duration)}</span>
+            <span className="min-w-[2.5rem] text-left font-mono">{formatTime(duration)}</span>
           </div>
         </div>
 
         {/* Volume Control */}
-        <div className="flex items-center gap-2 w-1/4 justify-end">
-          <Button variant="ghost" size="icon" onClick={() => setVolume(volume > 0 ? 0 : 50)}>
+        <div className="flex items-center gap-3 w-1/4 justify-end">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+            onClick={() => setVolume(volume > 0 ? 0 : 50)}
+            title={volume === 0 ? "Unmute" : "Mute"}
+          >
             {volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </Button>
-          <Slider value={[volume]} max={100} step={1} className="w-24 hidden md:block" onValueChange={(value) => setVolume(value[0])}/>
+          <Slider 
+            value={[volume]} 
+            max={100} 
+            step={1} 
+            className="w-24 hidden md:block" 
+            onValueChange={(value) => setVolume(value[0])}
+          />
         </div>
       </div>
       {currentSong.videoId && (
          <YouTube
             key={currentSong.videoId}
             videoId={currentSong.videoId}
-            opts={{ height: '0', width: '0', playerVars: { autoplay: isPlaying ? 1 : 0 } }}
+            opts={{ 
+              height: '0', 
+              width: '0', 
+              playerVars: { 
+                autoplay: isPlaying ? 1 : 0,
+                origin: typeof window !== 'undefined' ? window.location.origin : undefined
+              } 
+            }}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
-            onError={(e: any) => console.error('YT Player Error:', e)}
+            onError={(e: any) => {
+              console.error('YT Player Error:', e);
+              setIsReady(false);
+            }}
             className="absolute -z-10"
          />
       )}
