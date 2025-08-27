@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    serverActions : {
+      allowedOrigins : [
+        'localhost:9003',
+        'j4tc3wpw-9003.inc1.devtunnels.ms/'
+      ]
+    }
+  }
 };
 
 export default nextConfig;
