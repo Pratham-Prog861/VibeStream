@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generatePlaylist, GeneratePlaylistOutput } from '@/ai/flows/generate-playlist';
-
+import { savePlaylist } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,7 @@ const formSchema = z.object({
 
 export default function PlaylistForm() {
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<GeneratePlaylistOutput | null>(null);
   const { toast } = useToast();
   const { playSong, addToPlaylist } = usePlayerStore();
@@ -68,11 +69,68 @@ export default function PlaylistForm() {
     }
   }
 
+  const handleSavePlaylist = async () => {
+    if (!result) return;
+    
+    setSaving(true);
+    try {
+      const playlistName = `Playlist - ${new Date().toLocaleDateString()}`;
+      const playlistData = {
+        name: playlistName,
+        description: `Generated playlist based on: ${form.getValues('mood')}`,
+        songs: result.playlist.map(song => ({
+          title: song.title,
+          artist: song.artist,
+          videoId: song.youtubeId,
+          coverUrl: `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`
+        }))
+      };
+
+      console.log('Attempting to save playlist:', playlistData);
+      
+      // Add a small delay to ensure the loading state is shown
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const playlistId = await savePlaylist(playlistData);
+      
+      if (!playlistId) {
+        throw new Error('Failed to get playlist ID after save');
+      }
+      
+      console.log('Playlist saved successfully with ID:', playlistId);
+      
+      toast({
+        title: '🎵 Playlist Saved!',
+        description: 'Your playlist has been saved to your library.',
+        duration: 3000,
+      });
+      
+    } catch (error) {
+      console.error('Error in handleSavePlaylist:', error);
+      
+      let errorMessage = 'Failed to save playlist. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+        duration: 5000,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <Card>
+    <Card className="w-full max-w-2xl">
       <CardHeader>
-        <CardTitle className="font-headline">Create Your Playlist</CardTitle>
-        <CardDescription>Fill out the details below to get a custom playlist.</CardDescription>
+        <CardTitle>Generate a Playlist</CardTitle>
+        <CardDescription>
+          Describe the mood or activity for your perfect playlist
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -82,23 +140,25 @@ export default function PlaylistForm() {
               name="mood"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>What's your mood?</FormLabel>
+                  <FormLabel>Mood or Activity</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Energetic, chill, melancholic" {...field} />
+                    <Input placeholder="e.g., workout, relaxing, focus" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="listeningHabits"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Describe your listening habits</FormLabel>
+                  <FormLabel>Listening Preferences</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="e.g., I love indie rock from the 2000s, female vocalists, and upbeat tempos."
+                      placeholder="What kind of music do you like? Any specific artists or genres?"
+                      className="min-h-[100px]"
                       {...field}
                     />
                   </FormControl>
@@ -106,44 +166,90 @@ export default function PlaylistForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Generate Playlist
+
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate Playlist'
+              )}
             </Button>
           </form>
         </Form>
 
-        {loading && (
-          <div className="mt-8 text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-accent" />
-            <p className="mt-2 text-muted-foreground">Curating your vibe...</p>
-          </div>
-        )}
-
         {result && (
           <div className="mt-8">
-            <h3 className="font-headline text-2xl font-semibold mb-4">Your AI-Generated Playlist</h3>
-            <ul className="space-y-2 rounded-md border p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Your Generated Playlist</h3>
+              <Button 
+                onClick={handleSavePlaylist}
+                disabled={saving}
+                variant="outline"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Playlist'
+                )}
+              </Button>
+            </div>
+            
+            <div className="space-y-2">
               {result.playlist.map((song, index) => (
-                <li key={index} className="flex items-center justify-between gap-3 group">
-                  <div className="flex items-center gap-3">
-                    <Music className="h-4 w-4 text-accent" />
+                <div 
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group"
+                  onClick={() => {
+                    const songData = {
+                      title: song.title,
+                      artist: song.artist,
+                      videoId: song.youtubeId,
+                      coverUrl: `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`
+                    };
+                    playSong(songData);
+                    addToPlaylist([songData]);
+                  }}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="relative h-10 w-10 rounded-md overflow-hidden">
+                      <img
+                        src={`https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`}
+                        alt={song.title}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
                     <div>
-                      <p>{song.title}</p>
+                      <p className="font-medium">{song.title}</p>
                       <p className="text-sm text-muted-foreground">{song.artist}</p>
                     </div>
                   </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
                     className="opacity-0 group-hover:opacity-100"
-                    onClick={() => playSong({ title: song.title, artist: song.artist, videoId: song.youtubeId })}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const songData = {
+                        title: song.title,
+                        artist: song.artist,
+                        videoId: song.youtubeId,
+                        coverUrl: `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`
+                      };
+                      playSong(songData);
+                      addToPlaylist([songData]);
+                    }}
                   >
-                    <Play className="h-5 w-5" />
+                    <Play className="h-4 w-4" />
                   </Button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </CardContent>
