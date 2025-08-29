@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -12,10 +11,21 @@ type AlbumCardProps = {
   artist: string;
   coverUrl: string;
   aiHint?: string;
+  genre?: string;
+  mood?: string;
+  language?: string;
 };
 
-export default function AlbumCard({ title, artist, coverUrl, aiHint }: AlbumCardProps) {
-  const { playSong } = usePlayerStore();
+export default function AlbumCard({ 
+  title, 
+  artist, 
+  coverUrl, 
+  aiHint,
+  genre = 'Unknown',
+  mood = 'Unknown',
+  language = 'English' 
+}: AlbumCardProps) {
+  const { playSong, addToPlaylist } = usePlayerStore();
   const { toast } = useToast();
 
   const handlePlay = async () => {
@@ -23,7 +33,21 @@ export default function AlbumCard({ title, artist, coverUrl, aiHint }: AlbumCard
     // In a real app, you might have a specific playlist ID or track IDs.
     const results = await searchYoutubeVideo(`${title} ${artist}`, 1);
     if (results && results.length > 0) {
-      playSong(results[0]);
+      const song = {
+        ...results[0],
+        genre,
+        mood,
+        language,
+      };
+      playSong(song);
+      
+      // Also add to playlist for navigation
+      addToPlaylist([song]);
+      
+      toast({
+        title: 'Song added to queue',
+        description: `${title} by ${artist} is now playing.`,
+      });
     } else {
       toast({
         variant: 'destructive',

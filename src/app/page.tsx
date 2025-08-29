@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePlayerStore } from '@/store/player-store';
@@ -26,6 +25,9 @@ export default function Home() {
               artist={song.artist} 
               coverUrl={song.coverUrl} 
               aiHint={song.aiHint}
+              genre={song.genre}
+              mood={song.mood}
+              language={song.language}
             />
           ))}
         </div>

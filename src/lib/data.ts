@@ -3,49 +3,73 @@ export const trending = [
     title : 'Shaky ( Official #Video ) Sanju Rathod Ft. Isha Malviya | G-Spark |',
     artist : 'Sanju Rathod',
     coverUrl :'https://i.ytimg.com/vi/sUf2PtEZris/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBqW_v9JXVqa0-2evlNKiVF1F8ePA',
-    aiHint : 'Party Vibes'
+    aiHint : 'Party Vibes',
+    genre: 'Pop',
+    mood: 'Energetic',
+    language: 'Hindi'
   },
   {
     title : 'Monica - Lyric Video| COOLIE | Superstar Rajinikanth | Sun Pictures | Lokesh | Anirudh | Pooja Hegde',
     artist : 'Anirudh ',
     coverUrl : 'https://i.ytimg.com/vi/2qCpY38ompo/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLDaHYTdnOb-tfYs95vZphc3iQ2F0Q',
-    aiHint : 'Coolie'
+    aiHint : 'Coolie',
+    genre: 'Film Music',
+    mood: 'Energetic',
+    language: 'Tamil'
   },
   {
     title : 'Janaab-e-Aali | Full Song | WAR 2 | Hrithik Roshan, NTR | Pritam, Sachet Tandon, Saaj Bhatt, Amitabh',
     artist : 'Pritam',
     coverUrl : 'https://i.ytimg.com/vi/9l5QY7BJmHQ/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBBarTimQU6eCfQbKCzfI6gN75fBQ',
-    aiHint : 'War 2'
+    aiHint : 'War 2',
+    genre: 'Film Music',
+    mood: 'Intense',
+    language: 'Hindi'
   },
   {
     title : 'Uyi Amma - Azaad | Aaman D, Rasha Thadani| Madhubanti Bagchi,Amit Trivedi,Amitabh| Bosco| Abhishek K',
     artist : 'Amitabh',
     coverUrl : 'https://i.ytimg.com/vi/FZLadzn5i6Q/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAWikc4PlV9E5mNWApW7n3_tyr0Lw',
-    aiHint : 'Azaad'
+    aiHint : 'Azaad',
+    genre: 'Indie',
+    mood: 'Melancholic',
+    language: 'Hindi'
   },
   {
     title : 'Afusic - Pal Pal (Official Music Video) Prod. @AliSoomroMusic',
     artist : 'Afusic',
     coverUrl : 'https://i.ytimg.com/vi/8of5w7RgcTc/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAt3t2hlNu-ZPNTcTaKH-bQSxU-4g',
-    aiHint : 'Pal Pal'
+    aiHint : 'Pal Pal',
+    genre: 'Indie',
+    mood: 'Calm',
+    language: 'Hindi'
   },
   {
     title : 'Guru Randhawa - SIRRA ( Official Video )',
     artist : 'Guru Randhawa',
     coverUrl : 'https://i.ytimg.com/vi/knGCfzm4jWs/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLASEALHlKpxthNEEev7cDooXgiMQg',
-    aiHint : 'Sirra'
+    aiHint : 'Sirra',
+    genre: 'Pop',
+    mood: 'Energetic',
+    language: 'Hindi'
   },
   {
-    title : 'Guru Randhawa - QATAL - (Official Video)',
+    title : 'Qatal - Guru Randhawa | Latest Hindi Song 2024 | New Punjabi Song 2024',
     artist : 'Guru Randhawa',
     coverUrl : 'https://i.ytimg.com/vi/c-FKlE3_kHo/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLCdGDklGAt1aJmhFRK6-r5MwNVIyA',
-    aiHint : 'Qatal'
+    aiHint : 'Qatal',
+    genre: 'Pop',
+    mood: 'Energetic',
+    language: 'Hindi'
   },
   {
     title : 'LAAL PARI (Song): Yo Yo Honey Singh | Sajid Nadiadwala | Tarun Mansukhani | Housefull 5 - 6th June',
     artist : 'Yo Yo Honey Singh',
-    coverUrl : 'https://i.ytimg.com/vi/KGn-erOG-Bs/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBbNBg4zZNBpESjoAOLYWEbxi98jQ',
-    aiHint : 'Housefull 5'
+    coverUrl : 'https://i.ytimg.com/vi/8of5w7RgcTc/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAt3t2hlNu-ZPNTcTaKH-bQSxU-4g',
+    aiHint : 'Housefull 5',
+    genre: 'Film Music',
+    mood: 'Energetic',
+    language: 'Hindi'
   }
 ]
 

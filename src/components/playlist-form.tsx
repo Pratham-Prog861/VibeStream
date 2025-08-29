@@ -24,7 +24,7 @@ export default function PlaylistForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GeneratePlaylistOutput | null>(null);
   const { toast } = useToast();
-  const { playSong } = usePlayerStore();
+  const { playSong, addToPlaylist } = usePlayerStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,6 +41,21 @@ export default function PlaylistForm() {
     try {
       const output = await generatePlaylist(values);
       setResult(output);
+      
+      // Add songs to the player's playlist
+      const songs = output.playlist.map(song => ({
+        title: song.title,
+        artist: song.artist,
+        videoId: song.youtubeId,
+        coverUrl: `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`
+      }));
+      
+      addToPlaylist(songs);
+      
+      toast({
+        title: 'Playlist generated!',
+        description: `${songs.length} songs added to your queue.`,
+      });
     } catch (error) {
       console.error(error);
       toast({

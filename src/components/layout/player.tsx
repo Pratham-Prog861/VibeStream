@@ -26,10 +26,20 @@ export default function MusicPlayer() {
     volume,
     progress,
     duration,
+    playlist,
+    currentIndex,
+    isSeeking,
+    isAutoRecommendationEnabled,
+    isGeneratingRecommendations,
     play, 
     pause, 
     setVolume,
-    updateProgress
+    updateProgress,
+    nextSong,
+    previousSong,
+    setSeeking,
+    toggleAutoRecommendation,
+    getSmartRecommendation
   } = usePlayerStore();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -132,12 +142,34 @@ export default function MusicPlayer() {
   
   const onPlayerStateChange = (event: { data: number }) => {
     try {
+      // Don't change play state if we're currently seeking
+      if (isSeeking) return;
+      
       // Player state codes from YouTube Iframe API
       // -1: unstarted, 0: ended, 1: playing, 2: paused, 3: buffering, 5: video cued
       if (event.data === 1) { // Playing
         if(!isPlaying) play();
         startProgressLoop();
-      } else { // Paused, Ended, Buffering etc.
+      } else if (event.data === 0) { // Ended
+        if(isPlaying) pause();
+        stopProgressLoop();
+        
+        // Auto-advance to next song if available
+        if (playlist.length > 0 && currentIndex >= 0) {
+          setTimeout(() => {
+            nextSong();
+          }, 1000); // Wait 1 second before auto-advancing
+        } else if (isAutoRecommendationEnabled) {
+          // If no more songs in playlist, get smart recommendations
+          setTimeout(async () => {
+            await getSmartRecommendation();
+            // After getting recommendations, try to play next song
+            if (playlist.length > 0) {
+              nextSong();
+            }
+          }, 2000); // Wait 2 seconds before getting recommendations
+        }
+      } else { // Paused, Buffering etc.
         if(isPlaying) pause();
         stopProgressLoop();
       }
@@ -152,11 +184,18 @@ export default function MusicPlayer() {
     if (player && isReady && currentSong.videoId && typeof player.seekTo === 'function') {
       try {
         const newTime = value[0];
+        setSeeking(true);
         player.seekTo(newTime, true);
         updateProgress(newTime, duration);
+        
+        // Reset seeking flag after a short delay to allow the player to stabilize
+        setTimeout(() => {
+          setSeeking(false);
+        }, 100);
       } catch (e) {
         console.error("Seek failed:", e);
         setIsReady(false);
+        setSeeking(false);
       }
     }
   };
@@ -167,6 +206,8 @@ export default function MusicPlayer() {
     const secs = Math.floor(seconds % 60);
     return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
   };
+
+  const canNavigate = playlist.length > 0 && currentIndex >= 0;
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/80 backdrop-blur-xl shadow-2xl">
@@ -183,8 +224,11 @@ export default function MusicPlayer() {
             unoptimized
           />
           <div className="hidden lg:block">
-            <h3 className="font-semibold truncate text-foreground">{currentSong.title}</h3>
+            <h3 className="font-semibold truncate text-foreground">{currentSong.title.length > 30 ? currentSong.title.slice(0, 30) + "..." : currentSong.title}</h3>
             <p className="text-sm text-foreground/70 truncate">{currentSong.artist}</p>
+            {isGeneratingRecommendations && (
+              <p className="text-xs text-accent animate-pulse">Finding similar songs...</p>
+            )}
           </div>
         </div>
 
@@ -194,7 +238,7 @@ export default function MusicPlayer() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent transition-colors"
               title="Shuffle"
             >
               <Shuffle className="h-5 w-5" />
@@ -202,8 +246,10 @@ export default function MusicPlayer() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent transition-colors"
               title="Previous"
+              onClick={previousSong}
+              disabled={!canNavigate}
             >
               <SkipBack className="h-6 w-6" />
             </Button>
@@ -219,18 +265,40 @@ export default function MusicPlayer() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
+              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent transition-colors"
               title="Next"
+              onClick={nextSong}
+              disabled={!canNavigate}
             >
               <SkipForward className="h-6 w-6" />
             </Button>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
-              title="Repeat"
+              className={`h-10 w-10 transition-colors ${
+                isAutoRecommendationEnabled 
+                  ? 'text-accent hover:text-accent/80 hover:bg-accent/20' 
+                  : 'text-foreground/70 hover:text-foreground hover:bg-accent'
+              }`}
+              title={isAutoRecommendationEnabled ? "Auto-recommendations ON" : "Auto-recommendations OFF"}
+              onClick={async () => {
+                if (isGeneratingRecommendations) return;
+                
+                if (playlist.length === 0 || currentIndex >= playlist.length - 1) {
+                  // If no more songs, get recommendations
+                  await getSmartRecommendation();
+                } else {
+                  // Toggle auto-recommendations
+                  toggleAutoRecommendation();
+                }
+              }}
+              disabled={isGeneratingRecommendations}
             >
-              <Repeat className="h-5 w-5" />
+              {isGeneratingRecommendations ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Repeat className="h-5 w-5" />
+              )}
             </Button>
           </div>
           <div className="flex w-full items-center gap-3 text-xs text-foreground/70">
