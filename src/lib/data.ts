@@ -65,7 +65,7 @@ export const trending = [
   {
     title : 'LAAL PARI (Song): Yo Yo Honey Singh | Sajid Nadiadwala | Tarun Mansukhani | Housefull 5 - 6th June',
     artist : 'Yo Yo Honey Singh',
-    coverUrl : 'https://i.ytimg.com/vi/8of5w7RgcTc/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAt3t2hlNu-ZPNTcTaKH-bQSxU-4g',
+    coverUrl : 'https://i.ytimg.com/vi/KGn-erOG-Bs/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBbNBg4zZNBpESjoAOLYWEbxi98jQ',
     aiHint : 'Housefull 5',
     genre: 'Film Music',
     mood: 'Energetic',
