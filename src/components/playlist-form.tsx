@@ -25,7 +25,7 @@ export default function PlaylistForm() {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<GeneratePlaylistOutput | null>(null);
   const { toast } = useToast();
-  const { playSong, addToPlaylist } = usePlayerStore();
+  const { playFromQueue } = usePlayerStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,7 +51,7 @@ export default function PlaylistForm() {
         coverUrl: `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`
       }));
       
-      addToPlaylist(songs);
+      playFromQueue(songs, 0);
       
       toast({
         title: 'Playlist generated!',
@@ -206,14 +206,13 @@ export default function PlaylistForm() {
                   key={index}
                   className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group"
                   onClick={() => {
-                    const songData = {
-                      title: song.title,
-                      artist: song.artist,
-                      videoId: song.youtubeId,
-                      coverUrl: `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`
-                    };
-                    playSong(songData);
-                    addToPlaylist([songData]);
+                    const queueSongs = result.playlist.map(track => ({
+                      title: track.title,
+                      artist: track.artist,
+                      videoId: track.youtubeId,
+                      coverUrl: `https://i.ytimg.com/vi/${track.youtubeId}/hqdefault.jpg`
+                    }));
+                    playFromQueue(queueSongs, index);
                   }}
                 >
                   <div className="flex items-center space-x-4">
@@ -235,14 +234,13 @@ export default function PlaylistForm() {
                     className="opacity-0 group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
-                      const songData = {
-                        title: song.title,
-                        artist: song.artist,
-                        videoId: song.youtubeId,
-                        coverUrl: `https://i.ytimg.com/vi/${song.youtubeId}/hqdefault.jpg`
-                      };
-                      playSong(songData);
-                      addToPlaylist([songData]);
+                      const queueSongs = result.playlist.map(track => ({
+                        title: track.title,
+                        artist: track.artist,
+                        videoId: track.youtubeId,
+                        coverUrl: `https://i.ytimg.com/vi/${track.youtubeId}/hqdefault.jpg`
+                      }));
+                      playFromQueue(queueSongs, index);
                     }}
                   >
                     <Play className="h-4 w-4" />

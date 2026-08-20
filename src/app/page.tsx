@@ -1,13 +1,10 @@
 'use client';
 
-import { usePlayerStore } from '@/store/player-store';
 import AlbumCard from '@/components/album-card';
 import { madeForYou, featuredPlaylists, trending } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
 
 export default function Home() {
-  const { playSong } = usePlayerStore();
-
   return (
     <div className="space-y-12 mb-32">
       <section>
@@ -20,7 +17,7 @@ export default function Home() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {trending.map((song) => (
             <AlbumCard 
-              key={song.title} 
+              key={song.videoId}
               title={song.title} 
               artist={song.artist} 
               coverUrl={song.coverUrl} 
@@ -28,6 +25,9 @@ export default function Home() {
               genre={song.genre}
               mood={song.mood}
               language={song.language}
+              type="song"
+              queueSongs={trending}
+              queueStartIndex={trending.findIndex((item) => item.videoId === song.videoId)}
             />
           ))}
         </div>
@@ -39,7 +39,14 @@ export default function Home() {
         <h2 className="font-headline text-2xl font-semibold tracking-tight mb-4">Made For You</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {madeForYou.map((playlist) => (
-            <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.artist} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
+            <AlbumCard
+              key={playlist.name}
+              title={playlist.name}
+              artist={playlist.artist}
+              coverUrl={playlist.coverUrl}
+              aiHint={playlist.aiHint}
+              type="playlist"
+            />
           ))}
         </div>
       </section>
@@ -50,7 +57,14 @@ export default function Home() {
         <h2 className="font-headline text-2xl font-semibold tracking-tight mb-4">Featured Playlists</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {featuredPlaylists.map((playlist) => (
-            <AlbumCard key={playlist.name} title={playlist.name} artist={playlist.artist} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
+            <AlbumCard
+              key={playlist.name}
+              title={playlist.name}
+              artist={playlist.artist}
+              coverUrl={playlist.coverUrl}
+              aiHint={playlist.aiHint}
+              type="playlist"
+            />
           ))}
         </div>
       </section>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import YouTube from 'react-youtube';
 import type { YouTubePlayer } from 'react-youtube';
@@ -34,6 +34,7 @@ export default function MusicPlayer() {
     play, 
     pause, 
     setVolume,
+    toggleMute,
     updateProgress,
     nextSong,
     previousSong,
@@ -44,7 +45,34 @@ export default function MusicPlayer() {
   
   const playerRef = useRef<YouTubePlayer | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const advancingOnEndRef = useRef(false);
+  const playlistRef = useRef(playlist);
+  const currentIndexRef = useRef(currentIndex);
+  const isSeekingRef = useRef(isSeeking);
+  const isPlayingRef = useRef(isPlaying);
+  const currentSongIdRef = useRef(currentSong.videoId);
   const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    playlistRef.current = playlist;
+  }, [playlist]);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
+  useEffect(() => {
+    isSeekingRef.current = isSeeking;
+  }, [isSeeking]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    currentSongIdRef.current = currentSong.videoId;
+    advancingOnEndRef.current = false;
+  }, [currentSong.videoId]);
 
   // Reset readiness state when the song changes
   useEffect(() => {
@@ -140,37 +168,66 @@ export default function MusicPlayer() {
     }
   };
   
+  const handleSeekBy = useCallback((deltaInSeconds: number) => {
+    const player = playerRef.current;
+    if (!player || !isReady || !currentSong.videoId || typeof player.getCurrentTime !== 'function' || typeof player.seekTo !== 'function') {
+      return;
+    }
+
+    try {
+      const currentTime = player.getCurrentTime();
+      const targetTime = Math.max(0, Math.min(duration || Number.MAX_SAFE_INTEGER, currentTime + deltaInSeconds));
+      setSeeking(true);
+      player.seekTo(targetTime, true);
+      updateProgress(targetTime, duration);
+      setTimeout(() => setSeeking(false), 100);
+    } catch {
+      setSeeking(false);
+      setIsReady(false);
+    }
+  }, [currentSong.videoId, duration, isReady, setSeeking, updateProgress]);
+
+  const handleSetVolume = useCallback((value: number) => {
+    setVolume(Math.max(0, Math.min(100, Math.round(value))));
+  }, [setVolume]);
+
   const onPlayerStateChange = (event: { data: number }) => {
     try {
       // Don't change play state if we're currently seeking
-      if (isSeeking) return;
+      if (isSeekingRef.current) return;
       
       // Player state codes from YouTube Iframe API
       // -1: unstarted, 0: ended, 1: playing, 2: paused, 3: buffering, 5: video cued
       if (event.data === 1) { // Playing
-        if(!isPlaying) play();
+        advancingOnEndRef.current = false;
+        if(!isPlayingRef.current) play();
         startProgressLoop();
       } else if (event.data === 0) { // Ended
-        if(isPlaying) pause();
         stopProgressLoop();
+        if (advancingOnEndRef.current) return;
+        advancingOnEndRef.current = true;
+
+        if (isPlayingRef.current) pause();
         
-        // Auto-advance to next song if available
-        if (playlist.length > 0 && currentIndex >= 0) {
+        if (playlistRef.current.length > 0 && currentIndexRef.current >= 0) {
+          nextSong();
           setTimeout(() => {
-            nextSong();
-          }, 1000); // Wait 1 second before auto-advancing
-        } else if (isAutoRecommendationEnabled) {
-          // If no more songs in playlist, get smart recommendations
-          setTimeout(async () => {
-            await getSmartRecommendation();
-            // After getting recommendations, try to play next song
-            if (playlist.length > 0) {
-              nextSong();
-            }
-          }, 2000); // Wait 2 seconds before getting recommendations
+            advancingOnEndRef.current = false;
+          }, 500);
+          return;
         }
-      } else { // Paused, Buffering etc.
-        if(isPlaying) pause();
+
+        if (isAutoRecommendationEnabled) {
+          void (async () => {
+            await getSmartRecommendation();
+            nextSong();
+            advancingOnEndRef.current = false;
+          })();
+        } else {
+          advancingOnEndRef.current = false;
+        }
+      } else if (event.data === 2 || event.data === 5) { // Paused or cued
+        if(isPlayingRef.current) pause();
         stopProgressLoop();
       }
     } catch (e) {
@@ -178,6 +235,10 @@ export default function MusicPlayer() {
       setIsReady(false);
     }
   };
+
+  useEffect(() => {
+    return () => stopProgressLoop();
+  }, []);
   
   const onSliderChange = (value: number[]) => {
     const player = playerRef.current;
@@ -208,6 +269,61 @@ export default function MusicPlayer() {
   };
 
   const canNavigate = playlist.length > 0 && currentIndex >= 0;
+  const volumePercent = `${Math.round(volume)}%`;
+
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName.toLowerCase();
+      return (
+        target.isContentEditable ||
+        tag === 'input' ||
+        tag === 'textarea' ||
+        tag === 'select' ||
+        target.closest('[contenteditable="true"]') !== null
+      );
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return;
+      if (!currentSongIdRef.current && !['arrowup', 'arrowdown', 'm'].includes(event.key.toLowerCase())) return;
+
+      const key = event.key.toLowerCase();
+
+      if (key === ' ' || key === 'k') {
+        event.preventDefault();
+        if (isPlayingRef.current) {
+          pause();
+        } else {
+          play();
+        }
+      } else if (key === 'n') {
+        event.preventDefault();
+        if (playlistRef.current.length > 0 && currentIndexRef.current >= 0) nextSong();
+      } else if (key === 'p') {
+        event.preventDefault();
+        if (playlistRef.current.length > 0 && currentIndexRef.current >= 0) previousSong();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        handleSeekBy(5);
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        handleSeekBy(-5);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        handleSetVolume(volume + 5);
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        handleSetVolume(volume - 5);
+      } else if (key === 'm') {
+        event.preventDefault();
+        toggleMute();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleSeekBy, handleSetVolume, nextSong, pause, play, previousSong, toggleMute, volume]);
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/80 backdrop-blur-xl shadow-2xl">
@@ -320,7 +436,7 @@ export default function MusicPlayer() {
             variant="ghost" 
             size="icon" 
             className="h-10 w-10 text-foreground/70 hover:text-foreground hover:bg-accent/20 transition-colors"
-            onClick={() => setVolume(volume > 0 ? 0 : 50)}
+            onClick={toggleMute}
             title={volume === 0 ? "Unmute" : "Mute"}
           >
             {volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -330,8 +446,9 @@ export default function MusicPlayer() {
             max={100} 
             step={1} 
             className="w-24 hidden md:block" 
-            onValueChange={(value) => setVolume(value[0])}
+            onValueChange={(value) => handleSetVolume(value[0])}
           />
+          <span className="hidden min-w-[2.5rem] text-right text-xs font-medium text-foreground/80 md:block">{volumePercent}</span>
         </div>
       </div>
       {currentSong.videoId && (
