@@ -7,7 +7,14 @@ export default function PlaylistsPage() {
       <h1 className="font-headline text-4xl font-bold">Your Playlists</h1>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {featuredPlaylists.map((playlist) => (
-            <AlbumCard key={playlist.name} title={playlist.name} artist={`${playlist.artist} songs`} coverUrl={playlist.coverUrl} aiHint={playlist.aiHint}/>
+            <AlbumCard
+              key={playlist.name}
+              title={playlist.name}
+              artist={playlist.artist}
+              coverUrl={playlist.coverUrl}
+              aiHint={playlist.aiHint}
+              type="playlist"
+            />
           ))}
         </div>
     </div>

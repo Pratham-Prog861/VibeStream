@@ -24,7 +24,7 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { playSong, addToPlaylist } = usePlayerStore();
+  const { playFromQueue } = usePlayerStore();
   const { toast } = useToast();
 
   const loadPlaylists = async () => {
@@ -50,14 +50,7 @@ export default function LibraryPage() {
 
   const handlePlayPlaylist = (playlist: Playlist) => {
     if (playlist.songs.length > 0) {
-      const firstSong = playlist.songs[0];
-      playSong({
-        title: firstSong.title,
-        artist: firstSong.artist,
-        videoId: firstSong.videoId,
-        coverUrl: firstSong.coverUrl
-      });
-      addToPlaylist(playlist.songs);
+      playFromQueue(playlist.songs, 0);
     }
   };
 

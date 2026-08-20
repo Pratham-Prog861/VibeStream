@@ -30,7 +30,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState<Video[]>([]);
   const { toast } = useToast();
-  const { playSong } = usePlayerStore();
+  const { playFromQueue } = usePlayerStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -131,7 +131,15 @@ export default function SearchPage() {
           <div
             key={video.videoId}
             className="group relative cursor-pointer overflow-hidden rounded-lg"
-            onClick={() => playSong(video)}
+            onClick={() =>
+              playFromQueue(
+                videos.map((item) => ({
+                  ...item,
+                  videoId: item.videoId,
+                })),
+                videos.findIndex((item) => item.videoId === video.videoId)
+              )
+            }
           >
             <Image
               src={video.coverUrl}
@@ -139,6 +147,7 @@ export default function SearchPage() {
               width={300}
               height={168}
               className="aspect-video w-full object-cover transition-transform group-hover:scale-105"
+              unoptimized
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-4">
