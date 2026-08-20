@@ -90,16 +90,12 @@ export default function MusicPlayer() {
     // to gracefully handle cases where the player might not be available.
     const safePlayerAction = (action: () => void) => {
       try {
-        // Check if player methods exist and player is in a valid state
-        if (player && 
-            typeof player.getPlayerState === 'function' && 
-            typeof player.playVideo === 'function' &&
-            typeof player.pauseVideo === 'function') {
-          const playerState = player.getPlayerState();
-          // Only proceed if player is in a valid state (not -1: unstarted)
-          if (playerState !== -1 && playerState !== undefined) {
-            action();
-          }
+        if (
+          player &&
+          typeof player.playVideo === 'function' &&
+          typeof player.pauseVideo === 'function'
+        ) {
+          action();
         }
       } catch (e) {
         console.error("Player command failed:", e);
@@ -226,7 +222,7 @@ export default function MusicPlayer() {
         } else {
           advancingOnEndRef.current = false;
         }
-      } else if (event.data === 2 || event.data === 5) { // Paused or cued
+      } else if (event.data === 2) { // Paused
         if(isPlayingRef.current) pause();
         stopProgressLoop();
       }
